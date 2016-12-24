@@ -1,27 +1,70 @@
+ï»¿//#pragma once
+//#pragma execution_character_set("utf-8")
+//#pragma warning (disable:4819)
+
 #include "dialog.h"
 #include "ui_dialog.h"
 #include <QMessageBox>
 #include <QProcess>
+#include <QDir>
 #include <string>
 #include <iostream>
+#include <QUrl>
 using namespace std;
+
+#ifdef _WIN32
+#define FileSeparator "/"
+#else
+#define FileSeparator "/"
+#endif
+
+
+QString fixpath(QString input)
+{
+    //C:\Users\ADMINI~1\AppData\Local\Temp\tmp/temp/smali_classes2
+#ifdef _WIN32
+    return input.replace("/",FileSeparator);
+#else
+    return input.replace("\\",FileSeparator);
+#endif
+}
+
 
 Dialog::Dialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Dialog)
 {
-     ui->setupUi(this);
-     setWindowFlags(windowFlags() |Qt::WindowMinimizeButtonHint| Qt::WindowMaximizeButtonHint);//Ìí¼Ó×î´ó»¯°´Å¥
-    // setWindowTitle(QString::fromUtf8("APK¶àÆ½Ì¨¿ìËÙÇ©ÃûÖúÊÖ"));//
-     setWindowTitle(QString::fromLocal8Bit("APK¶àÆ½Ì¨¿ìËÙÇ©ÃûÖúÊÖ"));
-     //Qt×ÔÊÊÓ¦´°¿Ú´óĞ¡ĞèÒªÊ¹ÓÃ²¼¾Ö¹ÜÀíÆ÷£ºÒ»¸öÊÇ¿Ø¼şµÄSizePolicyÊôĞÔÉèÖÃ£¬¶şÊÇÒ»¶¨ÒªÉèÖÃ¶¥¼¶²¼¾Ö¡£
+    ui->setupUi(this);
+    //setWindowFlags(windowFlags() |Qt::WindowMinimizeButtonHint| Qt::WindowMaximizeButtonHint);//æ·»åŠ æœ€å¤§åŒ–æŒ‰é’®
 
-     ui->textEdit->setAcceptDrops(false);//½ûÖ¹texteditµÄÄ¬ÈÏÍÏ×§
-     //Ö§³ÖÍÏ·Å
-     setAcceptDrops(true);//https://github.com/leichaojian/qt/blob/master/drop/mainwindow.cpp
+    setWindowTitle(QString::fromLocal8Bit("APKå¤šå¹³å°å¿«é€Ÿç­¾ååŠ©æ‰‹"));
+    //Qtè‡ªé€‚åº”çª—å£å¤§å°éœ€è¦ä½¿ç”¨å¸ƒå±€ç®¡ç†å™¨ï¼šä¸€ä¸ªæ˜¯æ§ä»¶çš„SizePolicyå±æ€§è®¾ç½®ï¼ŒäºŒæ˜¯ä¸€å®šè¦è®¾ç½®é¡¶çº§å¸ƒå±€ã€‚
 
-     connect(ui->pushButton_signapk,SIGNAL(clicked()),this,SLOT(OnSignAPK()));
-     connect(ui->pushButton_verify_signature,SIGNAL(clicked()),this,SLOT(OnVerifySignature()));
+    ui->textEdit->setAcceptDrops(false);//ç¦æ­¢texteditçš„é»˜è®¤æ‹–æ‹½
+    //æ”¯æŒæ‹–æ”¾
+    setAcceptDrops(true);//https://github.com/leichaojian/qt/blob/master/drop/mainwindow.cpp
+
+    connect(ui->pushButton_signapk,SIGNAL(clicked()),this,SLOT(OnSignAPK()));
+    connect(ui->pushButton_verify_signature,SIGNAL(clicked()),this,SLOT(OnVerifySignature()));
+
+
+    //æ£€æŸ¥javaç¯å¢ƒ
+
+    QProcess process;
+    process.start("java");
+    process.waitForFinished();
+    QByteArray all=process.readAllStandardError();
+    string result=string(all.data());
+    cout<<result<<endl;
+    if(result.empty() || result.length()<2)
+    {
+        qDebug()<<QString(all)<<endl;
+        QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), QString::fromLocal8Bit("æ²¡æœ‰æ£€æµ‹åˆ°javaç¯å¢ƒï¼è¯·ä¸‹è½½jdkå¹¶é…ç½®ç¯å¢ƒå˜é‡JAVA_HOMEç­‰!"));
+        close();
+        exit(0);
+    }
+
+
 
 
 }
@@ -33,101 +76,261 @@ Dialog::~Dialog()
 
 void Dialog::dragEnterEvent(QDragEnterEvent *event)
 {
-    // QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), QString::fromLocal8Bit("dragEnterEvent"));
-    //Èç¹ûÎªÎÄ¼ş£¬ÔòÖ§³ÖÍÏ·Å
+    // QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), QString::fromLocal8Bit("dragEnterEvent"));
+    //å¦‚æœä¸ºæ–‡ä»¶ï¼Œåˆ™æ”¯æŒæ‹–æ”¾
     if (event->mimeData()->hasFormat("text/uri-list"))
         event->acceptProposedAction();
 
 }
 
-QString GetCrrectInput(const QString  & szInput)
+QString GetCorrectInput(const QString  & szInput)
 {
-    // ÎªÁË½â¾ö´«Èë²ÎÊıÖĞÓĞ¿Õ¸ñµÄÎÊÌâ
+    // ä¸ºäº†è§£å†³ä¼ å…¥å‚æ•°ä¸­æœ‰ç©ºæ ¼çš„é—®é¢˜
     QString szDest   = szInput;
-    // ÅĞ¶ÏÊÇ·ñÓĞ¿Õ¸ñ
+    // åˆ¤æ–­æ˜¯å¦æœ‰ç©ºæ ¼
     if(szDest.indexOf(' ') < 0)
     {
-        // Ã»ÓĞ¿Õ¸ñ
+        // æ²¡æœ‰ç©ºæ ¼
         return szDest;
     }
-    // ÓĞ¿Õ¸ñ,ÓÃ×ªÒå·û´¦Àí //Ìí¼ÓË«ÒıºÅ
+    // æœ‰ç©ºæ ¼,ç”¨è½¬ä¹‰ç¬¦å¤„ç† //æ·»åŠ åŒå¼•å·
     szDest="\""+szInput+"\"";
     return szDest;
 }
 
 void Dialog::dropEvent(QDropEvent *event)
 {
-    // QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), QString::fromLocal8Bit("dropEvent"));
-    //×¢Òâ£ºÕâÀïÈç¹ûÓĞ¶àÎÄ¼ş´æÔÚ£¬ÒâË¼ÊÇÓÃ»§Ò»ÏÂ×ÓÍÏ¶¯ÁË¶à¸öÎÄ¼ş£¬¶ø²»ÊÇÍÏ¶¯Ò»¸öÄ¿Â¼
-    //Èç¹ûÏë¶ÁÈ¡Õû¸öÄ¿Â¼£¬ÔòÔÚ²»Í¬µÄ²Ù×÷Æ½Ì¨ÏÂ£¬×Ô¼º±àĞ´º¯ÊıÊµÏÖ¶ÁÈ¡Õû¸öÄ¿Â¼ÎÄ¼şÃû
+    // QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), QString::fromLocal8Bit("dropEvent"));
+    //æ³¨æ„ï¼šè¿™é‡Œå¦‚æœæœ‰å¤šæ–‡ä»¶å­˜åœ¨ï¼Œæ„æ€æ˜¯ç”¨æˆ·ä¸€ä¸‹å­æ‹–åŠ¨äº†å¤šä¸ªæ–‡ä»¶ï¼Œè€Œä¸æ˜¯æ‹–åŠ¨ä¸€ä¸ªç›®å½•
+    //å¦‚æœæƒ³è¯»å–æ•´ä¸ªç›®å½•ï¼Œåˆ™åœ¨ä¸åŒçš„æ“ä½œå¹³å°ä¸‹ï¼Œè‡ªå·±ç¼–å†™å‡½æ•°å®ç°è¯»å–æ•´ä¸ªç›®å½•æ–‡ä»¶å
     QList<QUrl> urls = event->mimeData()->urls();
     if(urls.isEmpty())
         return;
-    fileList.clear();
-    //ÍùÎÄ±¾¿òÖĞ×·¼ÓÎÄ¼şÃû
+    bool  isDoClear=true;
+
+    //å¾€æ–‡æœ¬æ¡†ä¸­è¿½åŠ æ–‡ä»¶å
     foreach(QUrl url, urls) {
         QString filename = url.toLocalFile();
-        if(filename.endsWith(".apk",Qt::CaseInsensitive) || filename.endsWith(".zip",Qt::CaseInsensitive)||filename.endsWith(".jar",Qt::CaseInsensitive))
+        if(filename.endsWith(".apk",Qt::CaseInsensitive) ||filename.endsWith(".jar",Qt::CaseInsensitive))
         {
+            if(isDoClear)
+            {
+                //æ¸…é™¤ä¸Šè½®æ•°æ®
+                fileList.clear();
+                isDoClear=false;
+            }
             ui->textEdit->append(filename);
             fileList.append(filename);
         }else{
-            qDebug()<<"ºöÂÔ£º"<<filename<<endl;
+            qDebug()<<"å¿½ç•¥ï¼š"<<filename<<endl;
         }
-
     }
+    if(fileList.size()>0)
+    {
+        OnSignAPK();
+    }
+}
+
+/**
+ * @brief FuncModuleWin::copyFile
+ * @param fromFIleName ä¼˜ç›˜é‡Œé¢çš„æ–‡ä»¶
+ * @param toFileName æ‹·è´åˆ°/biné‡Œé¢çš„å¯åŠ¨æ–‡ä»¶
+ * @return
+ */
+bool copyFileFromRes(const QString& resName, const QString &toFileName)
+{
+    char* byteTemp = new char[4096];//å­—èŠ‚æ•°ç»„
+    int fileSize = 0;
+    int totalCopySize = 0;
+    QFile tofile;
+    tofile.setFileName(toFileName);
+    if(!tofile.open(QIODevice::ReadWrite|QIODevice::Truncate))
+    {
+        qDebug() << "open tofile failedï¼ï¼ï¼";
+        return false;
+    }
+    QDataStream out(&tofile);
+    out.setVersion(QDataStream::Qt_4_8);
+
+    QFile fromfile(resName);
+    if(!fromfile.open(QIODevice::ReadOnly)){
+        qDebug() << "open fromfile failedï¼ï¼ï¼";
+        return false;
+    }
+    fileSize = fromfile.size();
+    QDataStream in(&fromfile);
+
+    in.setVersion(QDataStream::Qt_4_8);
+    while(!in.atEnd())
+    {
+        int readSize = 0;
+        //è¯»å…¥å­—èŠ‚æ•°ç»„,è¿”å›è¯»å–çš„å­—èŠ‚æ•°é‡ï¼Œå¦‚æœå°äº4096ï¼Œåˆ™åˆ°äº†æ–‡ä»¶å°¾
+        readSize = in.readRawData(byteTemp, 4096);
+        out.writeRawData(byteTemp, readSize);
+        totalCopySize += readSize;
+    }
+    // å…³é—­æ–‡æœ¬æµï¼š
+    fromfile.flush();
+    tofile.flush();
+
+    tofile.close();
+    fromfile.close();
+
+    if(totalCopySize == fileSize){
+        tofile.setPermissions(QFile::ExeUser);
+        return true;
+    }
+    else
+        return false;
 }
 
 void Dialog::OnSignAPK()
 {
-     QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), QString::fromLocal8Bit("OnSignAPK"));
-     foreach(QString file, fileList) {
+    //QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), QString::fromLocal8Bit("OnSignAPK"));
+    foreach(QString apkpath, fileList) {
 
-        QString apkpath=GetCrrectInput(file);
-        QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), apkpath);
-     }
+        QString apkpath_abs=GetCorrectInput(apkpath);
+        //æŸ¥çœ‹apkç­¾å jarsigner -verify -verbose -certs baidusdk.apk
+        QString cmd="jarsigner -verify -verbose -certs "+apkpath_abs;
+        qDebug()<<cmd<<endl;
+        QProcess process;
+        process.start(cmd);
+        process.waitForFinished();
+        QByteArray all=process.readAll();
+        if(all.isEmpty())
+        {
+            all=process.readAllStandardOutput();
+            if(all.isEmpty())
+            {
+                all=process.readAllStandardError();
+            }
+        }
+        process.close();
+        QString  result=QString::fromLocal8Bit(all.data());
+        qDebug()<<"result="<<result<<endl;
+        if(result.indexOf("CertPath")!=-1)
+        {
+            QString ret=apkpath+ QString::fromLocal8Bit(" å·²ç»ç­¾åï¼");
+            QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), ret);
+            continue ;
+        }
+        //ç­¾åapk
+        QString tmpDir =  QDir::tempPath()+FileSeparator+"sign";
+        QDir(tmpDir).mkdir(tmpDir);
 
-     /*
-     apkpath=GetCrrectInput(apkpath);
-     //ÑéÖ¤ÊÇ·ñÒÑ¾­Ç©Ãû
-     string cmd_jarsigner="jarsigner -verify -verbose -certs "+string(UNICODEconvertANSI(apkpath.GetBuffer(),CP_THREAD_ACP));
-     string result_jarsigner=DoCommand(cmd_jarsigner);
-     if(result_jarsigner.find("jar ÒÑÑéÖ¤")!=-1)
-     {
-         CString ret;
-         ret.Format(L"%s ÒÑ¾­Ç©Ãû£¡",apkpath.GetBuffer());
-         AfxMessageBox(ret);
-         return ;
-     }*/
+        QString signapk_jar_path =tmpDir+FileSeparator+"signapk.jar";
+        QString key_pem_path =tmpDir+FileSeparator+"key.pem";
+        QString key_pk8_path =tmpDir+FileSeparator+"key.pk8";
+
+        //1ã€å…ˆè·å–èµ„æºæ–‡ä»¶çš„signapk.jar
+        if(!QFile::exists(signapk_jar_path))
+        {
+            bool ret=copyFileFromRes(":/sign/res/signapk.jar",signapk_jar_path);
+            qDebug()<<"signapk_jar_path="<<ret<<endl;
+        }
+        if(!QFile::exists(key_pem_path))
+        {
+            bool ret=copyFileFromRes(":/sign/res/key.pem",key_pem_path);
+            qDebug()<<"key_pem_path="<<ret<<endl;
+        }
+        if(!QFile::exists(key_pk8_path))
+        {
+            bool ret=copyFileFromRes(":/sign/res/key.pk8",key_pk8_path);
+            qDebug()<<"key_pk8_path="<<ret<<endl;
+        }
+        qDebug()<<"tmpDir="<<tmpDir<<endl;
+
+        QString outputapk_path=QString(apkpath).replace(".apk","_sign.apk");
+        if(apkpath.endsWith(".jar"))
+        {
+            outputapk_path=QString(apkpath).replace(".jar","_sign.jar");
+        }
+        //è·å–å½“å‰ç›®å½•
+        QString currentDir = QDir::currentPath();
+
+        //æ‰‹åŠ¨åˆ‡æ¢å½“å‰ç›®å½•ä¸‹çš„ç­¾åï¼š
+        QString currentDir_key_pk8=currentDir+FileSeparator+"key.pk8";
+        QString currentDir_key_pem=currentDir+FileSeparator+"key.pem";
+        if(QFile::exists(currentDir_key_pk8))
+        {
+            key_pk8_path=currentDir_key_pk8;
+            ui->textEdit->append(QString::fromLocal8Bit("ä½¿ç”¨å½“å‰ç›®å½•ç­¾åï¼š"));
+            ui->textEdit->append(key_pk8_path);
+        }
+        if(QFile::exists(currentDir_key_pem))
+        {
+            key_pem_path=currentDir_key_pem;
+            ui->textEdit->append(QString::fromLocal8Bit("ä½¿ç”¨å½“å‰ç›®å½•ç­¾åï¼š"));
+            ui->textEdit->append(key_pem_path);
+        }
+
+        cmd="java -jar "+GetCorrectInput(signapk_jar_path)+" "+GetCorrectInput(key_pem_path)+" "+GetCorrectInput(key_pk8_path)
+                +" "+apkpath_abs+" "+GetCorrectInput(outputapk_path);
+        qDebug()<<cmd<<endl;
+        QProcess process_java;
+        process_java.start(cmd);
+        process_java.waitForFinished();
+        if(QFile::exists(outputapk_path))
+        {
+
+            qDebug()<<"æˆåŠŸç­¾åç”Ÿæˆapk"<<endl;
+            ui->textEdit->append(QString::fromLocal8Bit("ç­¾åæˆåŠŸ!%1==>%2").arg(apkpath).arg(outputapk_path));
+            //ui->textEdit->append(outputapk_path);
+        }else{
+            QByteArray all=process_java.readAll();
+            if(all.isEmpty())
+            {
+                all=process.readAllStandardOutput();
+                if(all.isEmpty())
+                {
+                    all=process.readAllStandardError();
+                }
+            }
+            QString  cmd_result=QString::fromLocal8Bit(all.data());
+
+            QString result=QString::fromLocal8Bit("ç­¾åå¤±è´¥ï¼%1==>%2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
+            qDebug()<<result<<endl;
+            ui->textEdit->append(result);
+        }
+        process_java.close();
+    }
 
 }
 
 void Dialog::OnVerifySignature()
 {
-   // QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), QString::fromLocal8Bit("OnVerifySignature"));
+    // QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), QString::fromLocal8Bit("OnVerifySignature"));
     if(fileList.size()==0)
     {
-        QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), QString::fromLocal8Bit("Ã»ÓĞÍÏÈëapk"));
+        QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), QString::fromLocal8Bit("æ²¡æœ‰æ‹–å…¥apk"));
         return ;
     }
     foreach(QString file, fileList) {
 
-       QString apkpath=GetCrrectInput(file);
-       //QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"), apkpath);
-       //²é¿´apkÇ©Ãû jarsigner -verify -verbose -certs baidusdk.apk
-       QString cmd="jarsigner -verify -verbose -certs "+apkpath;
+        QString apkpath=GetCorrectInput(file);
+        //QMessageBox::information(this, QString::fromLocal8Bit("æç¤º"), apkpath);
+        //æŸ¥çœ‹apkç­¾å jarsigner -verify -verbose -certs baidusdk.apk
+        QString cmd="jarsigner -verify -verbose -certs "+apkpath;
 
-       qDebug()<<cmd<<endl;
-       QProcess process;
-       process.start("ping");
-       process.waitForFinished();
-       QByteArray all=process.readAll();
-       cout<<string(all.data())<<endl;
+        qDebug()<<cmd<<endl;
+        QProcess process;
+        process.start(cmd);
+        process.waitForFinished();
+        QByteArray all=process.readAll();
+        if(all.isEmpty())
+        {
+            all=process.readAllStandardOutput();
+            if(all.isEmpty())
+            {
+                all=process.readAllStandardError();
+            }
+        }
+        cout<<string(all.data())<<endl;
 
-      QString  result=QString::fromLocal8Bit(all.data());
-       qDebug()<<"result="<<result<<endl;
-
-       QMessageBox::information(this, QString::fromLocal8Bit("ÌáÊ¾"),result);
+        QString  result=QString::fromLocal8Bit(all.data());
+        qDebug()<<"result="<<result<<endl;
+        QString title=QString::fromLocal8Bit("æç¤º:")+file;
+        QMessageBox::information(this,title ,result);
     }
 
 

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/sign">
+        <file>res/signapk.jar</file>
+        <file>res/key.pem</file>
+        <file>res/key.pk8</file>
+    </qresource>
+</RCC>

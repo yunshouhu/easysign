@@ -1,56 +1,73 @@
-#include <QCoreApplication>
+ï»¿#include <QCoreApplication>
 #include <QProcess>
 #include <QDebug>
 #include <string>
 #include <iostream>
 using namespace std;
-
+//æœ¬cppæ–‡ä»¶è¯·ä½¿ç”¨utf-8æ ¼å¼ç¼–ç (æ³¨ï¼šä¸æ˜¯ä»¥utf-8æ— bomæ ¼å¼ç¼–ç )ï¼Œå‚è€ƒå·¥å…·notepad++
 void test001()
 {
     QProcess pro;
-    pro.start("ping.exe");
+    pro.start("ping");//æµ‹è¯•linux å’Œwindow
     pro.waitForFinished();
 
-    string str1 = "111ÖĞÎÄ";
-    QByteArray qba = pro.readAllStandardOutput();
-    char* myChar = new char[qba.length()];
-    for(int i=0; i<qba.length();i++)
+    string str1 = "111ä¸­æ–‡";
+    QByteArray all = pro.readAll();
+    if(all.isEmpty())
     {
-        myChar[i] = qba[i];
+        all=pro.readAllStandardOutput();
+        if(all.isEmpty())
+        {
+            all=pro.readAllStandardError();
+        }
+    }
+
+    char* myChar = new char[all.length()];
+    for(int i=0; i<all.length();i++)
+    {
+        myChar[i] = all[i];
     }
     string str2 = string(myChar);
-    cout<<str2<<endl;//qt5 ¿ÉÒÔÊä³öÖĞÎÄ
+    cout<<str2<<endl;//qt5 å¯ä»¥è¾“å‡ºä¸­æ–‡
 
     cout<<"=============="<<endl;
 
-    cout<<string(qba.data())<<endl;//qt5 ¿ÉÒÔÊä³öÖĞÎÄ
+    cout<<string(all.data())<<endl;//qt5 å¯ä»¥è¾“å‡ºä¸­æ–‡
 
     cout<<"=============="<<endl;
     cout<<str1<<endl;
     delete []myChar;
     QString qstr1=QString::fromStdString(str1);
-    qDebug()<<qstr1<<endl;  //ÖĞÎÄÂÒÂë
+    qDebug()<<qstr1<<endl;  //ä¸­æ–‡ä¹±ç 
 
     qstr1=QString::fromLocal8Bit(str1.c_str());
-    qDebug()<<qstr1<<endl;  //ÖĞÎÄÏÔÊ¾Õı³££¬µ«ÊÇÕâÀïÏÔÊ¾µÄÊÇunicode±àÂë
+    qDebug()<<qstr1<<endl;  //ä¸­æ–‡æ˜¾ç¤ºæ­£å¸¸ï¼Œä½†æ˜¯è¿™é‡Œæ˜¾ç¤ºçš„æ˜¯unicodeç¼–ç 
 
     qstr1=QString::fromStdString(str2);
-    qDebug()<<qstr1<<endl;  //ÖĞÎÄÂÒÂë
+    qDebug()<<qstr1<<endl;  //ä¸­æ–‡ä¹±ç 
 
     qstr1=QString::fromLocal8Bit(str2.c_str());
-    qDebug()<<qstr1<<endl;  //ÖĞÎÄÏÔÊ¾Õı³££¬µ«ÊÇÕâÀïÏÔÊ¾µÄÊÇunicode±àÂë
+    qDebug()<<qstr1<<endl;  //ä¸­æ–‡æ˜¾ç¤ºæ­£å¸¸ï¼Œä½†æ˜¯è¿™é‡Œæ˜¾ç¤ºçš„æ˜¯unicodeç¼–ç 
 
-    qstr1=QString::fromLocal8Bit(qba);
-    qDebug()<<qstr1<<endl;  //ÖĞÎÄÏÔÊ¾Õı³££¬µ«ÊÇÕâÀïÏÔÊ¾µÄÊÇunicode±àÂë
+    qstr1=QString::fromLocal8Bit(all);
+    qDebug()<<qstr1<<endl;  //ä¸­æ–‡æ˜¾ç¤ºæ­£å¸¸ï¼Œä½†æ˜¯è¿™é‡Œæ˜¾ç¤ºçš„æ˜¯unicodeç¼–ç 
 
 }
 
 void test002()
 {
     QProcess process;
-    process.start("ping.exe");
+    process.start("ping");
     process.waitForFinished();
     QByteArray all=process.readAll();
+    if(all.isEmpty())
+    {
+        all=process.readAllStandardOutput();
+        if(all.isEmpty())
+        {
+            all=process.readAllStandardError();
+        }
+    }
 
     cout<<string(all.data())<<endl;
 
@@ -73,23 +90,40 @@ void test003()
     process.start(cmd);
     process.waitForFinished();
     QByteArray all=process.readAll();
+    if(all.isEmpty())
+    {
+        all=process.readAllStandardOutput();
+        if(all.isEmpty())
+        {
+            all=process.readAllStandardError();
+        }
+    }
 
     cout<<string(all.data())<<endl;
 
-    QString result=QString(all);
-    qDebug()<<"result="<<result<<endl;
+   // QString result=QString(all);
+   // qDebug()<<"result="<<result<<endl;
 
-    result=QString::fromLocal8Bit(all.data());
+    QString result=QString::fromLocal8Bit(all.data());
     qDebug()<<"result2="<<result<<endl;
 
 }
-//Qt5 QProcessµÄÊ¹ÓÃºÍreadAllStandardOutput()ÖĞÎÄÂÒÂëµÄ½â¾ö
+//Qt5 QProcessçš„ä½¿ç”¨å’ŒreadAllStandardOutput()ä¸­æ–‡ä¹±ç çš„è§£å†³
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    test003();
+   test001();
+   test002();
+   test003();
 
+    QString line("ä½ å¥½");
+    QString data=QStringLiteral(" åˆ°åº•ä¹±ç è¿˜æ˜¯unicodeè¾“å‡º");
+    qDebug()<<"testä¸­æ–‡"<<line<<data<<endl;
+
+    cout<<"testä¸­æ–‡"<<QString(line.toUtf8()).toLocal8Bit().data()<<data.toLocal8Bit().data()<<endl;
+
+    cout<<"testä¸­æ–‡"<<line.toStdString()<<data.toLocal8Bit().data()<<endl;
 
     return a.exec();
 }

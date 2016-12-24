@@ -10,6 +10,10 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = easysign
 TEMPLATE = app
+#æ≤Ã¨±‡“Î
+QMAKE_LFLAGS  = -static
+
+RC_FILE = app.rc
 
 
 SOURCES += main.cpp\
@@ -18,3 +22,6 @@ SOURCES += main.cpp\
 HEADERS  += dialog.h
 
 FORMS    += dialog.ui
+
+RESOURCES += \
+    easysign.qrc

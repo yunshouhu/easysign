@@ -22,13 +22,15 @@ class Dialog : public QDialog
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();
+    void appendLog(QString line);
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-private slots:
+public slots:
     void OnSignAPK();
     void OnVerifySignature();
+    void OnClearLog();
 private:
     Ui::Dialog *ui;
     QList<QString> fileList;

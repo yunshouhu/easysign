@@ -118,7 +118,8 @@ int main(int argc, char *argv[])
    test003();
 
     QString line("你好");
-    QString data=QStringLiteral(" 到底乱码还是unicode输出");
+   // QString data=QStringLiteral(" 到底乱码还是unicode输出");
+    QString data=QString::fromLocal8Bit(" 到底乱码还是unicode输出");
     qDebug()<<"test中文"<<line<<data<<endl;
 
     cout<<"test中文"<<QString(line.toUtf8()).toLocal8Bit().data()<<data.toLocal8Bit().data()<<endl;

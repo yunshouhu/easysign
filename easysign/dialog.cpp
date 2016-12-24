@@ -10,6 +10,8 @@
 #include <string>
 #include <iostream>
 #include <QUrl>
+#include "mythread.h"
+
 using namespace std;
 
 #ifdef _WIN32
@@ -35,7 +37,7 @@ Dialog::Dialog(QWidget *parent) :
     ui(new Ui::Dialog)
 {
     ui->setupUi(this);
-    //setWindowFlags(windowFlags() |Qt::WindowMinimizeButtonHint| Qt::WindowMaximizeButtonHint);//添加最大化按钮
+    setWindowFlags(windowFlags() |Qt::WindowMinimizeButtonHint| Qt::WindowMaximizeButtonHint);//添加最大化按钮
 
     setWindowTitle(QString::fromLocal8Bit("APK多平台快速签名助手"));
     //Qt自适应窗口大小需要使用布局管理器：一个是控件的SizePolicy属性设置，二是一定要设置顶级布局。
@@ -46,6 +48,7 @@ Dialog::Dialog(QWidget *parent) :
 
     connect(ui->pushButton_signapk,SIGNAL(clicked()),this,SLOT(OnSignAPK()));
     connect(ui->pushButton_verify_signature,SIGNAL(clicked()),this,SLOT(OnVerifySignature()));
+    connect(ui->pushButton_clearLog,SIGNAL(clicked()),this,SLOT(OnClearLog()));
 
 
     //检查java环境
@@ -72,6 +75,12 @@ Dialog::Dialog(QWidget *parent) :
 Dialog::~Dialog()
 {
     delete ui;
+}
+
+void Dialog::appendLog(QString line)
+{
+    ui->textEdit->append(line);
+   // this->repaint();
 }
 
 void Dialog::dragEnterEvent(QDragEnterEvent *event)
@@ -127,7 +136,10 @@ void Dialog::dropEvent(QDropEvent *event)
     }
     if(fileList.size()>0)
     {
-        OnSignAPK();
+        //OnSignAPK();
+        MyThread* mythread=new MyThread(this);
+        mythread->start();
+
     }
 }
 
@@ -274,7 +286,7 @@ void Dialog::OnSignAPK()
         {
 
             qDebug()<<"成功签名生成apk"<<endl;
-            ui->textEdit->append(QString::fromLocal8Bit("签名成功!%1==>%2").arg(apkpath).arg(outputapk_path));
+            ui->textEdit->append(QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
             //ui->textEdit->append(outputapk_path);
         }else{
             QByteArray all=process_java.readAll();
@@ -288,12 +300,13 @@ void Dialog::OnSignAPK()
             }
             QString  cmd_result=QString::fromLocal8Bit(all.data());
 
-            QString result=QString::fromLocal8Bit("签名失败！%1==>%2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
+            QString result=QString::fromLocal8Bit("签名失败！%1 ==> %2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
             qDebug()<<result<<endl;
             ui->textEdit->append(result);
         }
         process_java.close();
     }
+    ui->textEdit->append("finish!");
 
 }
 
@@ -334,4 +347,9 @@ void Dialog::OnVerifySignature()
     }
 
 
+}
+
+void Dialog::OnClearLog()
+{
+    ui->textEdit->setText("");
 }

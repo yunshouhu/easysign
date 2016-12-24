@@ -4,11 +4,12 @@
 #
 #-------------------------------------------------
 
+
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = easysign
+TARGET = easy_sign
 TEMPLATE = app
 #æ≤Ã¨±‡“Î
 QMAKE_LFLAGS  = -static
@@ -17,9 +18,11 @@ RC_FILE = app.rc
 
 
 SOURCES += main.cpp\
-        dialog.cpp
+        dialog.cpp \
+    mythread.cpp
 
-HEADERS  += dialog.h
+HEADERS  += dialog.h \
+    mythread.h
 
 FORMS    += dialog.ui
 

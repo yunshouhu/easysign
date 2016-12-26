@@ -10,6 +10,9 @@
 #include <string>
 #include <iostream>
 #include <QUrl>
+#include <QTextBlock>
+#include <QTextCursor>
+
 #include "mythread.h"
 
 using namespace std;
@@ -50,6 +53,12 @@ Dialog::Dialog(QWidget *parent) :
     connect(ui->pushButton_verify_signature,SIGNAL(clicked()),this,SLOT(OnVerifySignature()));
     connect(ui->pushButton_clearLog,SIGNAL(clicked()),this,SLOT(OnClearLog()));
 
+    connect(this,SIGNAL(OnMsgSignal(int,QString)),SLOT(OnDoMsgSignal(int,QString)));
+
+    //信号槽机制需要注册元数据
+    qRegisterMetaType<QTextBlock>("QTextBlock");
+    qRegisterMetaType<QTextCursor>("QTextCursor");
+
 
     //检查java环境
 
@@ -77,9 +86,19 @@ Dialog::~Dialog()
     delete ui;
 }
 
-void Dialog::appendLog(QString line)
+void Dialog::OnDoMsgSignal(int msgType,QString line)
 {
-    ui->textEdit->append(line);
+    switch (msgType) {
+    case 0:
+        ui->textEdit->append(line);
+        break;
+    case 1:
+        QMessageBox::information(this, QString::fromLocal8Bit("提示"), line);
+        break;
+    default:
+        break;
+    }
+
    // this->repaint();
 }
 
@@ -195,7 +214,7 @@ bool copyFileFromRes(const QString& resName, const QString &toFileName)
     else
         return false;
 }
-
+//大部分在子线程中操作
 void Dialog::OnSignAPK()
 {
     //QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("OnSignAPK"));
@@ -223,7 +242,8 @@ void Dialog::OnSignAPK()
         if(result.indexOf("CertPath")!=-1)
         {
             QString ret=apkpath+ QString::fromLocal8Bit(" 已经签名！");
-            QMessageBox::information(this, QString::fromLocal8Bit("提示"), ret);
+            //QMessageBox::information(this, QString::fromLocal8Bit("提示"), ret);
+            emit OnMsgSignal(1,ret);
             continue ;
         }
         //签名apk
@@ -266,14 +286,15 @@ void Dialog::OnSignAPK()
         if(QFile::exists(currentDir_key_pk8))
         {
             key_pk8_path=currentDir_key_pk8;
-            ui->textEdit->append(QString::fromLocal8Bit("使用当前目录签名："));
-            ui->textEdit->append(key_pk8_path);
+           emit OnMsgSignal(0,QString::fromLocal8Bit("使用当前目录签名："));
+           emit OnMsgSignal(0,key_pk8_path);
+
         }
         if(QFile::exists(currentDir_key_pem))
         {
             key_pem_path=currentDir_key_pem;
-            ui->textEdit->append(QString::fromLocal8Bit("使用当前目录签名："));
-            ui->textEdit->append(key_pem_path);
+            emit OnMsgSignal(0,QString::fromLocal8Bit("使用当前目录签名："));
+            emit OnMsgSignal(0,key_pem_path);
         }
 
         cmd="java -jar "+GetCorrectInput(signapk_jar_path)+" "+GetCorrectInput(key_pem_path)+" "+GetCorrectInput(key_pk8_path)
@@ -286,8 +307,8 @@ void Dialog::OnSignAPK()
         {
 
             qDebug()<<"成功签名生成apk"<<endl;
-            ui->textEdit->append(QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
-            //ui->textEdit->append(outputapk_path);
+            //ui->textEdit->append(QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
+            emit OnMsgSignal(0,QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
         }else{
             QByteArray all=process_java.readAll();
             if(all.isEmpty())
@@ -302,11 +323,12 @@ void Dialog::OnSignAPK()
 
             QString result=QString::fromLocal8Bit("签名失败！%1 ==> %2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
             qDebug()<<result<<endl;
-            ui->textEdit->append(result);
+            //ui->textEdit->append(result);
+            emit OnMsgSignal(0,result);
         }
         process_java.close();
     }
-    ui->textEdit->append("finish!");
+    emit OnMsgSignal(0,"finish!");
 
 }
 

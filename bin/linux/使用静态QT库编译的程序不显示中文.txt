@@ -1,0 +1,9 @@
+http://www.cnblogs.com/LWJin/p/5501702.html
+
+原因：静态编译QT时，configure未加-qt-freetype选项。
+
+检查：configure后fontconfig是否为yes。
+
+安装：sudo apt-get install libfontconfig*。
+
+再次检查。

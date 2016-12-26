@@ -54,10 +54,19 @@ Dialog::Dialog(QWidget *parent) :
     connect(ui->pushButton_clearLog,SIGNAL(clicked()),this,SLOT(OnClearLog()));
 
     connect(this,SIGNAL(OnMsgSignal(int,QString)),SLOT(OnDoMsgSignal(int,QString)));
+    #ifndef _WIN32
+        ui->groupBox->setTitle(QString::fromLocal8Bit("Drag APK to come in to sign, put the key.pem and key.pk8 in the current directory can switch signature! Support multi APK! Support window and linux!"));
+        ui->pushButton_clearLog->setText("clearLog");
+        ui->pushButton_exit->setText("exit");
+        ui->pushButton_signapk->setText("sign apk");
+        ui->pushButton_verify_signature->setText("verify signature");
+    #endif
+
 
     //信号槽机制需要注册元数据
     qRegisterMetaType<QTextBlock>("QTextBlock");
     qRegisterMetaType<QTextCursor>("QTextCursor");
+
 
 
     //检查java环境
@@ -66,12 +75,25 @@ Dialog::Dialog(QWidget *parent) :
     process.start("java");
     process.waitForFinished();
     QByteArray all=process.readAllStandardError();
+    if(all.isEmpty())
+    {
+        all=process.readAllStandardOutput();
+        if(all.isEmpty())
+        {
+            all=process.readAllStandardError();
+        }
+    }
     string result=string(all.data());
     cout<<result<<endl;
     if(result.empty() || result.length()<2)
     {
-        qDebug()<<QString(all)<<endl;
-        QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("没有检测到java环境！请下载jdk并配置环境变量JAVA_HOME等!"));
+        qDebug()<<QString(all)<<endl;       
+#ifdef _WIN32
+    QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("没有检测到java环境！请下载jdk并配置环境变量JAVA_HOME等!"));
+#else
+    QMessageBox::information(this, QString::fromLocal8Bit("提示"),
+                             QString::fromLocal8Bit("Not detected in the Java environment! Please download JDK and configure the environment variable JAVA_HOME!"));
+#endif
         close();
         exit(0);
     }
@@ -94,6 +116,7 @@ void Dialog::OnDoMsgSignal(int msgType,QString line)
         break;
     case 1:
         QMessageBox::information(this, QString::fromLocal8Bit("提示"), line);
+
         break;
     default:
         break;
@@ -181,7 +204,6 @@ bool copyFileFromRes(const QString& resName, const QString &toFileName)
         return false;
     }
     QDataStream out(&tofile);
-    out.setVersion(QDataStream::Qt_4_8);
 
     QFile fromfile(resName);
     if(!fromfile.open(QIODevice::ReadOnly)){
@@ -191,7 +213,6 @@ bool copyFileFromRes(const QString& resName, const QString &toFileName)
     fileSize = fromfile.size();
     QDataStream in(&fromfile);
 
-    in.setVersion(QDataStream::Qt_4_8);
     while(!in.atEnd())
     {
         int readSize = 0;
@@ -241,8 +262,11 @@ void Dialog::OnSignAPK()
         qDebug()<<"result="<<result<<endl;
         if(result.indexOf("CertPath")!=-1)
         {
-            QString ret=apkpath+ QString::fromLocal8Bit(" 已经签名！");
-            //QMessageBox::information(this, QString::fromLocal8Bit("提示"), ret);
+#ifdef _WIN32
+             QString ret=apkpath+ QString::fromLocal8Bit(" 已经签名！");
+#else
+             QString ret=apkpath+ QString::fromLocal8Bit(" Already signed！");
+#endif
             emit OnMsgSignal(1,ret);
             continue ;
         }
@@ -286,14 +310,24 @@ void Dialog::OnSignAPK()
         if(QFile::exists(currentDir_key_pk8))
         {
             key_pk8_path=currentDir_key_pk8;
-           emit OnMsgSignal(0,QString::fromLocal8Bit("使用当前目录签名："));
+
+#ifdef _WIN32
+            emit OnMsgSignal(0,QString::fromLocal8Bit("使用当前目录签名："));
+#else
+           emit OnMsgSignal(0,QString::fromLocal8Bit(" Using the current directory signature："));
+#endif
+
            emit OnMsgSignal(0,key_pk8_path);
 
         }
         if(QFile::exists(currentDir_key_pem))
         {
             key_pem_path=currentDir_key_pem;
+#ifdef _WIN32
             emit OnMsgSignal(0,QString::fromLocal8Bit("使用当前目录签名："));
+#else
+           emit OnMsgSignal(0,QString::fromLocal8Bit(" Using the current directory signature："));
+#endif
             emit OnMsgSignal(0,key_pem_path);
         }
 
@@ -308,7 +342,11 @@ void Dialog::OnSignAPK()
 
             qDebug()<<"成功签名生成apk"<<endl;
             //ui->textEdit->append(QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
-            emit OnMsgSignal(0,QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
+#ifdef _WIN32
+           emit OnMsgSignal(0,QString::fromLocal8Bit("签名成功!%1 ==> %2").arg(apkpath).arg(outputapk_path));
+#else
+           emit OnMsgSignal(0,QString::fromLocal8Bit("Signature success!%1 ==> %2").arg(apkpath).arg(outputapk_path));
+#endif
         }else{
             QByteArray all=process_java.readAll();
             if(all.isEmpty())
@@ -321,7 +359,12 @@ void Dialog::OnSignAPK()
             }
             QString  cmd_result=QString::fromLocal8Bit(all.data());
 
-            QString result=QString::fromLocal8Bit("签名失败！%1 ==> %2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
+#ifdef _WIN32
+           QString result=QString::fromLocal8Bit("签名失败！%1 ==> %2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
+#else
+           QString result=QString::fromLocal8Bit("Signature failure！%1 ==> %2 msg:%3").arg(apkpath).arg(outputapk_path).arg(cmd_result);
+#endif
+
             qDebug()<<result<<endl;
             //ui->textEdit->append(result);
             emit OnMsgSignal(0,result);
@@ -337,7 +380,12 @@ void Dialog::OnVerifySignature()
     // QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("OnVerifySignature"));
     if(fileList.size()==0)
     {
-        QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("没有拖入apk"));
+
+#ifdef _WIN32
+          QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("没有拖入apk"));
+#else
+         QMessageBox::information(this, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("Not drag into the APK"));
+#endif
         return ;
     }
     foreach(QString file, fileList) {

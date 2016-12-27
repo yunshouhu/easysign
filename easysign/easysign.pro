@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = easy_sign
 TEMPLATE = app
-#¾²Ì¬±àÒë
+#é™æ€ç¼–è¯‘
 QMAKE_LFLAGS  = -static
 
 RC_FILE = app.rc

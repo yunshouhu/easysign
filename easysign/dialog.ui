@@ -34,7 +34,7 @@
         </sizepolicy>
        </property>
        <property name="title">
-        <string>拖拽APK进来即可签名,把key.pem和key.pk8放到当前目录即可切换签名！支持多APK！支持window和linux!</string>
+        <string>拖拽APK进来即可签名,把key.pem和key.pk8放到当前目录即可切换签名！支持多APK！支持window和linux!需要java环境</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -42,6 +42,16 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="pushButton_selectapk">
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="text">
+             <string>选择APK</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QPushButton" name="pushButton_signapk">
             <property name="cursor">

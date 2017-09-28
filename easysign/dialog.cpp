@@ -12,6 +12,7 @@
 #include <QUrl>
 #include <QTextBlock>
 #include <QTextCursor>
+#include <QFileDialog>
 
 #include "mythread.h"
 
@@ -52,6 +53,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(ui->pushButton_signapk,SIGNAL(clicked()),this,SLOT(OnSignAPK()));
     connect(ui->pushButton_verify_signature,SIGNAL(clicked()),this,SLOT(OnVerifySignature()));
     connect(ui->pushButton_clearLog,SIGNAL(clicked()),this,SLOT(OnClearLog()));
+    connect(ui->pushButton_selectapk,SIGNAL(clicked()),this,SLOT(OnSelectAPK()));
 
     connect(this,SIGNAL(OnMsgSignal(int,QString)),SLOT(OnDoMsgSignal(int,QString)));
     #ifndef _WIN32
@@ -422,4 +424,29 @@ void Dialog::OnVerifySignature()
 void Dialog::OnClearLog()
 {
     ui->textEdit->setText("");
+}
+
+void Dialog::OnSelectAPK()
+{
+
+    QString filename;
+    filename = QFileDialog::getOpenFileName(this,
+                                            QString::fromLocal8Bit("选择APK文件"), "",QString::fromLocal8Bit("APK (*.apk *.jar)")); //选择路径
+    if(filename.isEmpty())
+    {
+        return;
+    }else
+    {
+        fileList.append(filename);
+       // ui->textEdit->append(filename);
+        emit OnMsgSignal(0,filename);
+
+        if(fileList.size()>0)
+        {
+            MyThread* mythread=new MyThread(this);
+            mythread->start();
+        }
+
+    }
+    //ui->textEdit->setText("select");
 }

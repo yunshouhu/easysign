@@ -31,6 +31,7 @@ signals:
     void OnMsgSignal(int msgType,QString line);
 
 public slots:
+    void OnSelectAPK();
     void OnSignAPK();
     void OnVerifySignature();
     void OnClearLog();

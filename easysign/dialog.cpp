@@ -338,7 +338,8 @@ void Dialog::OnSignAPK()
         qDebug()<<cmd<<endl;
         QProcess process_java;
         process_java.start(cmd);
-        process_java.waitForFinished();
+        process_java.waitForStarted();
+        process_java.waitForFinished(-1);//30000ms= 30s  //If msecs is -1, this function will not time out.
         if(QFile::exists(outputapk_path))
         {
 
